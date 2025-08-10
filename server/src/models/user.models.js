@@ -5,12 +5,7 @@ import { ApiError } from "../utils/ApiError.js";
 
 const userSchema = new mongoose.Schema(
   {
-    firstName: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    lastName: {
+    name: {
       type: String,
       required: true,
       trim: true,
@@ -21,11 +16,7 @@ const userSchema = new mongoose.Schema(
       trim: true,
       unique: true,
       index: true,
-    },
-    status: {
-      type: String,
-      enum: ["online", "offline"],
-      default: "online",
+      lowercase: true,
     },
     email: {
       type: String,
@@ -43,6 +34,11 @@ const userSchema = new mongoose.Schema(
 
     refreshToken: {
       type: String,
+    },
+    status: {
+      type: String,
+      enum: ["online", "offline"],
+      default: "online",
     },
     friends: [
       {
@@ -67,7 +63,7 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-userSchema.pre("save",async function (next) {
+userSchema.pre("save", async function (next) {
   if (this.isModified("password")) {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
@@ -90,22 +86,28 @@ userSchema.methods.setOffline = function () {
 };
 
 userSchema.methods.sendFriendRequest = async function (receiverId) {
-  const receiver = await mongoose.model("User").findOne({ userId: receiverId }).select("_id");
+  const receiver = await mongoose
+    .model("User")
+    .findOne({ userId: receiverId })
+    .select("_id");
   if (!receiver) {
-    throw new ApiError(404,"User not found");
+    throw new ApiError(404, "User not found");
   }
-  if(this.userId === receiver.userId){
-    throw new ApiError(400,"You cannot send a friend request to yourself");
+  if (this.userId === receiver.userId) {
+    throw new ApiError(400, "You cannot send a friend request to yourself");
   }
   this.friendRequestsSent.addToSet(receiver._id);
   receiver.friendRequestsReceived.addToSet(this._id);
   await receiver.save();
   await this.save();
-  return this
+  return this;
 };
 
 userSchema.methods.acceptFriendRequest = async function (friendId) {
-  const sender = await mongoose.model("User").findOne({ userId: friendId }).select("_id");
+  const sender = await mongoose
+    .model("User")
+    .findOne({ userId: friendId })
+    .select("_id");
   if (!sender) {
     throw new ApiError(404, "User not found");
   }
@@ -123,7 +125,10 @@ userSchema.methods.acceptFriendRequest = async function (friendId) {
 };
 
 userSchema.methods.cancelFriendRequest = async function (receiverId) {
-  const receiver = await mongoose.model("User").findOne({ userId: receiverId }).select("_id");
+  const receiver = await mongoose
+    .model("User")
+    .findOne({ userId: receiverId })
+    .select("_id");
   if (!receiver) {
     throw new ApiError(404, "User not found");
   }
@@ -139,12 +144,19 @@ userSchema.methods.cancelFriendRequest = async function (receiverId) {
 };
 
 userSchema.methods.removeFriend = async function (friendId) {
-  const friend = await mongoose.model("User").findOne({ userId: friendId }).select("_id");
+  const friend = await mongoose
+    .model("User")
+    .findOne({ userId: friendId })
+    .select("_id");
   if (!friend) {
     throw new ApiError(404, "Friend not found");
   }
-  this.friends = this.friends.filter((id) => id.toString() !== friend._id.toString());
-  friend.friends = friend.friends.filter((id) => id.toString() !== this._id.toString());
+  this.friends = this.friends.filter(
+    (id) => id.toString() !== friend._id.toString()
+  );
+  friend.friends = friend.friends.filter(
+    (id) => id.toString() !== this._id.toString()
+  );
   await friend.save();
   await this.save();
   return this;
@@ -159,7 +171,7 @@ userSchema.methods.generateAccessToken = function () {
     },
     process.env.ACCESS_TOKEN_SECRET,
     {
-        expiresIn: process.env.ACCESS_TOKEN_EXPIRY
+      expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
     }
   );
 };
@@ -167,11 +179,11 @@ userSchema.methods.generateAccessToken = function () {
 userSchema.methods.generateRefreshToken = function () {
   return jwt.sign(
     {
-      id: this._id
+      id: this._id,
     },
     process.env.REFRESH_TOKEN_SECRET,
     {
-      expiresIn: process.env.REFRESH_TOKEN_EXPIRY
+      expiresIn: process.env.REFRESH_TOKEN_EXPIRY,
     }
   );
 };
