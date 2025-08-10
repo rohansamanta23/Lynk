@@ -1,10 +1,8 @@
 import { createServer } from "http";
 import { Server } from "socket.io";
 import { app } from "./app.js";
-import dotenv from "dotenv";
 import { connectDB } from "./db/index.db.js";
 // import { privateChatSetup } from "./socket/privateChat.js";
-dotenv.config();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
