@@ -1,11 +1,16 @@
+import jwt from "jsonwebtoken";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { ApiError } from "../utils/ApiError.js";
-import { User } from "../models/User.js";
+import { User } from "../models/user.models.js";
 
 const registerUser = asyncHandler(async (req, res) => {
   const { name, userId, email, password } = req.body;
-  if ([name, userId, email, password].some((field) => field?.trim() === "")) {
+  if (
+    [name, userId, email, password].some(
+      (field) => !field || field.trim() === ""
+    )
+  ) {
     throw new ApiError(400, "All fields are required");
   }
   if (!email.includes("@")) {
@@ -25,14 +30,13 @@ const registerUser = asyncHandler(async (req, res) => {
   if (existingEmail) {
     throw new ApiError(400, "Email already exists");
   }
-
   const user = await User.create({
-    firstName,
-    lastName,
+    name,
     userId: userId.toLowerCase(),
     email: email.toLowerCase(),
     password,
   });
+
   if (!user) {
     throw new ApiError(500, "User registration failed");
   }
@@ -43,6 +47,7 @@ const registerUser = asyncHandler(async (req, res) => {
   if (!userCreated) {
     throw new ApiError(500, "User registration failed");
   }
+  console.log(`User created: ${userCreated._id}`);
   const accessToken = user.generateAccessToken();
   const refreshToken = user.generateRefreshToken();
 
@@ -60,7 +65,7 @@ const registerUser = asyncHandler(async (req, res) => {
     .cookie("accessToken", accessToken, options)
     .json(
       new ApiResponse(
-        { user: userCreated, accessToken, refreshToken },
+        { user: userCreated },
         201,
         "User registered successfully"
       )
@@ -97,6 +102,8 @@ const loginUser = asyncHandler(async (req, res) => {
   loggedInUser.refreshToken = refreshToken;
   await loggedInUser.save();
 
+  console.log(`User logged in: ${loggedInUser._id}`);
+
   const options = {
     httpOnly: true,
     secure: true,
@@ -108,7 +115,7 @@ const loginUser = asyncHandler(async (req, res) => {
     .cookie("accessToken", accessToken, options)
     .json(
       new ApiResponse(
-        { user: loggedInUser, accessToken, refreshToken },
+        { user: loggedInUser },
         200,
         "User logged in successfully"
       )
@@ -121,7 +128,7 @@ const logoutUser = asyncHandler(async (req, res) => {
     throw new ApiError(401, "User not authenticated");
   }
   await User.findByIdAndUpdate(user._id, { refreshToken: null });
-
+  console.log(`User logged out: ${user._id}`);
   return res
     .status(200)
     .clearCookie("refreshToken")
@@ -136,10 +143,7 @@ const refreshAccessToken = async function (req, res) {
   }
   let decodedToken;
   try {
-    decodedToken = jwt.verify(
-      refreshToken,
-      process.env.REFRESH_TOKEN_SECRET
-    );
+    decodedToken = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
   } catch (error) {
     throw new ApiError(403, "Invalid refresh token");
   }
@@ -154,6 +158,7 @@ const refreshAccessToken = async function (req, res) {
     throw new ApiError(403, "Refresh token expired or does not match");
   }
   const newAccessToken = user.generateAccessToken();
+  console.log(`Access token refreshed: ${user._id}`);
   const options = {
     httpOnly: true,
     secure: true,

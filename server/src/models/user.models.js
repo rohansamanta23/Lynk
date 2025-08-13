@@ -9,6 +9,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
+      index: true,
     },
     userId: {
       type: String,
@@ -58,10 +59,17 @@ const userSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
+    createdAt: {
+      type: Date,
+      default: Date.now,
+      expires: 600, // 600 seconds = 10 minutes
+    },
   },
 
   { timestamps: true }
 );
+
+userSchema.index({ name: "text", userId: "text" });
 
 userSchema.pre("save", async function (next) {
   if (this.isModified("password")) {

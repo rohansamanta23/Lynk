@@ -1,7 +1,6 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import { errorHandler } from "./utils/ApiError.js";
 
 const app = express();
 
@@ -17,11 +16,20 @@ app.use(express.static("public"));
 app.use(cookieParser());
 
 // routes
-import authRouter from "./routes/auth.routes.js";
+import { authRouters } from "./routes/auth.routes.js";
+import { userRouters } from "./routes/user.routes.js";
 // routes implementation
-app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/auth", authRouters);
+app.use("/api/v1/user", userRouters);
 
-// Error handling middleware (must be last)
-app.use(errorHandler);
+app.use((err, _, res, next) => {
+  const statusCode = err.statusCode || 500;
+  res.status(statusCode).json({
+    success: false,
+    statusCode,
+    message: err.message || "Internal Server Error",
+    errors: err.errors || [],
+  });
+});
 
 export { app };

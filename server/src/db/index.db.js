@@ -5,7 +5,7 @@ const connectDB = async () => {
   try {
     console.log("MongoDB URI:", process.env.MONGODB_URI);
     const connectionInstance = await mongoose.connect(
-      `${process.env.MONGODB_URI}/$Lynk`
+      `${process.env.MONGODB_URI}/Lynk`
     );
     console.log(
       "MongoDB connected successfully:",
