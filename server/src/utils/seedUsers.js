@@ -10,10 +10,10 @@ dotenv.config();
 const seedUsers = async () => {
   try {
     await connectDB();
-    // await User.deleteMany({});
+    await User.deleteMany({});
     const users = [];
     const rawPassword = "111111";
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < 19; i++) {
         let email, userId,name;
         do {
           name = faker.person.fullName();

@@ -18,9 +18,11 @@ app.use(cookieParser());
 // routes
 import { authRouters } from "./routes/auth.routes.js";
 import { userRouters } from "./routes/user.routes.js";
+import { friendshipRoutes } from "./routes/friendship.routes.js";
 // routes implementation
 app.use("/api/v1/auth", authRouters);
 app.use("/api/v1/user", userRouters);
+app.use("/api/v1/friendship", friendshipRoutes);
 
 app.use((err, _, res, next) => {
   const statusCode = err.statusCode || 500;

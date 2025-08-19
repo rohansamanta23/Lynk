@@ -1,4 +1,6 @@
 import mongoose from "mongoose";
+import { User } from "../models/user.models.js";
+import { Friendship } from "../models/friendship.models.js";
 
 const connectDB = async () => {
   console.log("Connecting to MongoDB...");
@@ -11,6 +13,8 @@ const connectDB = async () => {
       "MongoDB connected successfully:",
       connectionInstance.connection.host
     );
+    // await User.deleteMany({});
+    // await Friendship.deleteMany({});
   } catch (error) {
     console.log("Error connecting to MongoDB:", error);
     process.exit(1); // Exit the process with failure
