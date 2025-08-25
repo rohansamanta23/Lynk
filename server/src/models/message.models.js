@@ -35,12 +35,6 @@ const messageSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-
-messageSchema.post("save", async function(doc) {
-  await mongoose.model("Conversation").updateOne(
-    { _id: doc.conversation },
-    { $set: { lastMessage: doc._id } }
-  );
-});
+messageSchema.index({ conversation: 1, createdAt: -1 });
 
 export const Message = mongoose.model("Message", messageSchema);

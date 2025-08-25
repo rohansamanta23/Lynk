@@ -16,15 +16,17 @@ const router = Router();
 
 router.use(verifyJWT);
 
-router.route("/private").post(createPrivateConversation);
-router.route("/group").post(createGroupConversation);
-router.route("/group/:conversationId/participants").post(addParticipantToGroup);
-router.route("/group/:conversationId/leave").post(leaveGroupConversation);
+router.route("/private").post(createPrivateConversation);//
+router.route("/group").post(createGroupConversation);//
+router.route("/group/:conversationId/participants").post(addParticipantToGroup);//
+router.route("/group/:conversationId/leave").post(leaveGroupConversation);//
 
-router.route("/").get(getConversations);
+router.route("/").get(getConversations);//
 router.route("/:conversationId").get(getConversationsById);
-router.route("/group/:conversationId/participants").get(getGroupParticipants);
+router.route("/group/:conversationId/participants").get(getGroupParticipants);//
 
-router.route("/group/:conversationId/participants/:userId").delete(removeParticipantFromGroup);
+router.route("/group/:conversationId/participants/:participantId").delete(removeParticipantFromGroup);//
 
-router.route("/group/:conversationId/name").put(updateGroupName);
+router.route("/group/:conversationId/name").put(updateGroupName);//
+
+export { router as conversationRoutes };

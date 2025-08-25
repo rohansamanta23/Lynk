@@ -9,7 +9,8 @@
   "scripts": {
     "dev": "nodemon -r dotenv/config src/index.js",
     "test1": "node -r dotenv/config src/utils/seedUsers.js",
-    "test2": "node -r dotenv/config src/utils/seedFriendship.js"
+    "test2": "node -r dotenv/config src/utils/seedFriendship.js",
+    "test3": "node -r dotenv/config src/utils/seedConversation.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

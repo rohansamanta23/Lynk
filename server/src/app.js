@@ -19,10 +19,15 @@ app.use(cookieParser());
 import { authRouters } from "./routes/auth.routes.js";
 import { userRouters } from "./routes/user.routes.js";
 import { friendshipRoutes } from "./routes/friendship.routes.js";
+import { conversationRoutes } from "./routes/conversation.routes.js";
+import { messageRoutes } from "./routes/message.routes.js";
+
 // routes implementation
 app.use("/api/v1/auth", authRouters);
 app.use("/api/v1/user", userRouters);
 app.use("/api/v1/friendship", friendshipRoutes);
+app.use("/api/v1/conversation", conversationRoutes);
+app.use("/api/v1/message", messageRoutes);
 
 app.use((err, _, res, next) => {
   const statusCode = err.statusCode || 500;

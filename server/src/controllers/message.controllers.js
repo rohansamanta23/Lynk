@@ -52,74 +52,81 @@ const getMessages = asyncHandler(async (req, res) => {
   const user = req.user;
   const { conversationId } = req.params;
   const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 10;
-  const skip = (page - 1) * limit;
+  const limit = Math.min(parseInt(req.query.limit) || 20, 100); // cap
 
-  if (!conversationId) throw new ApiError(400, "Conversation ID is required");
+  if (!user) throw new ApiError(400, "User required");
+  if (!conversationId) throw new ApiError(400, "Conversation ID required");
 
-  const conversation = await Conversation.findById(conversationId).lean();
+  const conversation = await Conversation.findById(conversationId)
+    .select("_id participants");
   if (!conversation) throw new ApiError(404, "Conversation not found");
 
-  if (!conversation.participants.some(p => p.toString() === user._id.toString())) {
-    throw new ApiError(403, "You are not a participant in this conversation");
-  }
+  const isMember = conversation.participants
+    .some(p => p.toString() === user._id.toString());
+  if (!isMember) throw new ApiError(403, "Not a participant");
+
+  const totalMessages = await Message.countDocuments({ conversation: conversationId });
+  const totalPages = Math.ceil(totalMessages / limit) || 1;
 
   const messages = await Message.find({ conversation: conversationId })
-    .populate("sender", "userId name")
-    .sort({ createdAt: -1 }) // newest first
-    .skip(skip)
+    .populate("sender", "name userId")
+    .sort({ createdAt: -1 })     // newest first (page 1 is newest)
+    .skip((page - 1) * limit)
     .limit(limit)
     .lean();
 
-  const totalMessages = await Message.countDocuments({ conversation: conversationId });
-  const totalPages = Math.ceil(totalMessages / limit);
-
-  res.status(200).json(
-    new ApiResponse(
-      {
-        messages,
-        pagination: {
-          totalMessages,
-          totalPages,
-          currentPage: page,
-          hasNextPage: page < totalPages,
-        },
-        success: true,
-      },
-      200,
-      "Messages retrieved successfully"
-    )
-  );
+  return res.status(200).json(new ApiResponse({
+    messages,
+    pagination: {
+      totalMessages,
+      totalPages,
+      currentPage: page,
+      hasNextPage: page < totalPages,
+    }
+  }, 200, "Messages retrieved"));
 });
 
 
-const markMessageAsRead = asyncHandler(async (req, res) => {
+
+const markMessagesRead = asyncHandler(async (req, res) => {
   const user = req.user;
-  if (!user) throw new ApiError(400, "User ID is required");
+  const { conversationId } = req.params;
+  const { uptoMessageId } = req.body || {};
 
-  const { messageId } = req.body;
-  if (!messageId) throw new ApiError(400, "Message ID is required");
+  if (!user) throw new ApiError(400, "User required");
+  if (!conversationId) throw new ApiError(400, "Conversation ID required");
 
-  const message = await Message.findById(messageId);
-  if (!message) throw new ApiError(404, "Message not found");
+  const conversation = await Conversation.findById(conversationId).select("_id participants");
+  if (!conversation) throw new ApiError(404, "Conversation not found");
 
-  // only participants can mark read
-  const conversation = await Conversation.findById(message.conversation);
- if (!conversation.participants.some(p => p.toString() === user._id.toString())) {
-    throw new ApiError(403, "You are not a participant in this conversation");
-}
+  const isMember = conversation.participants
+    .some(p => p.toString() === user._id.toString());
+  if (!isMember) throw new ApiError(403, "Not a participant");
 
-  // add user to readBy array if not already
-  if (!message.readBy.some(r => r.toString() === user._id.toString())) {
-    message.readBy.push(user._id);
-    await message.save();
+  const query = {
+    conversation: conversationId,
+    sender: { $ne: user._id },
+    readBy: { $ne: user._id },
+  };
+
+  if (uptoMessageId) {
+    const uptoMsg = await Message.findById(uptoMessageId).select("createdAt conversation");
+    if (!uptoMsg) throw new ApiError(404, "uptoMessageId not found");
+    if (uptoMsg.conversation.toString() !== conversationId) {
+      throw new ApiError(400, "Message does not belong to this conversation");
+    }
+    query.createdAt = { $lte: uptoMsg.createdAt };
   }
 
-  res.status(200).json(
-    new ApiResponse(
-      { message, success: true },
-      200,
-      "Message marked as read"
-    )
+  const result = await Message.updateMany(query, { $addToSet: { readBy: user._id } });
+
+  return res.status(200).json(
+    new ApiResponse({ updated: result.modifiedCount }, 200, "Marked as read")
   );
 });
+
+export {
+  sendMessage,
+  getMessages,
+  markMessagesRead
+}

@@ -40,13 +40,7 @@ const userSchema = new mongoose.Schema(
       enum: ["online", "offline"],
       default: "online",
     },
-    createdAt: {
-      type: Date,
-      default: Date.now,
-      expires: 1800, // 1800 seconds = 30 minutes
-    },
   },
-
   { timestamps: true }
 );
 

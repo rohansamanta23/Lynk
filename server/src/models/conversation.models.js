@@ -25,9 +25,16 @@ const conversationSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Message",
     },
+    pairKey: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
   },
 
   { timestamps: true }
 );
+conversationSchema.index({ participants: 1, createdAt: -1 });
+conversationSchema.index({ isGroup: 1, participants: 1 });
 
 export const Conversation = mongoose.model("Conversation", conversationSchema);

@@ -3,7 +3,6 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.models.js";
 import { Friendship } from "../models/friendship.models.js";
-import { Message } from "../models/message.models.js";
 import { Conversation } from "../models/conversation.models.js";
 
 const createPrivateConversation = asyncHandler(async (req, res) => {
@@ -24,17 +23,15 @@ const createPrivateConversation = asyncHandler(async (req, res) => {
   }
   const friendship = await Friendship.findOne({
     $or: [
-      { userId: user._id, friendId: friend._id, status: "accepted" },
-      { userId: friend._id, friendId: user._id, status: "accepted" },
+      { requester: user._id, recipient: friend._id, status: "accepted" },
+      { requester: friend._id, recipient: user._id, status: "accepted" },
     ],
   });
   if (!friendship) {
     throw new ApiError(404, "Friendship not found");
   }
-  const existingConversation = await Conversation.findOne({
-    participants: { $all: [user._id, friend._id] },
-    isGroup: false,
-  });
+  const pairKey = [user._id.toString(), friend._id.toString()].sort().join(":");
+  const existingConversation = await Conversation.findOne({ pairKey });
   if (existingConversation) {
     return res
       .status(200)
@@ -45,36 +42,19 @@ const createPrivateConversation = asyncHandler(async (req, res) => {
           "Private conversation already exists"
         )
       );
-  } else {
-    const conversation = await Conversation.create({
-      participants: [user._id, friend._id],
-      isGroup: false,
-    });
-    if (!conversation) {
-      throw new ApiError(500, "Failed to create private conversation");
-    }
-    const messages = await Message.find({ conversation: conversation._id })
-      .populate("sender", "name userId")
-      .sort({ createdAt: -1 })
-      .limit(20)
-      .lean();
-    res.status(201).json(
-      new ApiResponse(
-        {
-          conversation,
-          messages,
-          pagination: {
-            totalMessages: messages.length,
-            totalPages: 1,
-            currentPage: 1,
-            hasNextPage: false,
-          },
-        },
-        201,
-        "Private conversation created"
-      )
-    );
   }
+  const conversation = await Conversation.create({
+    participants: [user._id, friend._id],
+    isGroup: false,
+    pairKey,
+  });
+  if (!conversation) {
+    throw new ApiError(500, "Failed to create private conversation");
+  }
+
+  res
+    .status(201)
+    .json(new ApiResponse(conversation, 201, "Private conversation created"));
 });
 
 const getConversations = asyncHandler(async (req, res) => {
@@ -133,10 +113,13 @@ const createGroupConversation = asyncHandler(async (req, res) => {
   if (!user) {
     throw new ApiError(400, "User ID is required");
   }
-  const { groupName, participants } = req.body;
+  let { groupName, participants } = req.body;
   if (!participants || participants.length === 0) {
     throw new ApiError(400, "Participant IDs are required");
   }
+  participants = participants.filter(
+    (id) => id.toString() !== user._id.toString()
+  );
   const friends = await User.find({ _id: { $in: participants } });
   if (!friends || friends.length === 0) {
     throw new ApiError(404, "Friends not found");
@@ -144,11 +127,12 @@ const createGroupConversation = asyncHandler(async (req, res) => {
   for (const friend of friends) {
     const userFriend = await Friendship.findOne({
       $or: [
-        { sender: user._id, receiver: friend._id, status: "accepted" },
-        { sender: friend._id, receiver: user._id, status: "accepted" },
+        { requester: user._id, recipient: friend._id, status: "accepted" },
+        { requester: friend._id, recipient: user._id, status: "accepted" },
       ],
     });
     if (!userFriend) {
+      console.log(friend);
       throw new ApiError(
         403,
         "You can only create group conversations with friends"
@@ -167,27 +151,10 @@ const createGroupConversation = asyncHandler(async (req, res) => {
   if (!conversation) {
     throw new ApiError(500, "Failed to create group conversation");
   }
-  const messages = await Message.find({ conversation: conversation._id })
-    .populate("sender", "name userId")
-    .sort({ createdAt: -1 })
-    .limit(20)
-    .lean();
-  res.status(201).json(
-    new ApiResponse(
-      {
-        conversation,
-        messages,
-        pagination: {
-          totalMessages: messages.length,
-          totalPages: 1,
-          currentPage: 1,
-          hasNextPage: false,
-        },
-      },
-      201,
-      "Group conversation created"
-    )
-  );
+
+  res
+    .status(201)
+    .json(new ApiResponse(conversation, 201, "Group conversation created"));
 });
 
 const addParticipantToGroup = asyncHandler(async (req, res) => {
@@ -195,7 +162,8 @@ const addParticipantToGroup = asyncHandler(async (req, res) => {
   if (!user) {
     throw new ApiError(400, "User ID is required");
   }
-  const { conversationId, participantIds } = req.body;
+  const { conversationId } = req.params;
+  const { participantIds } = req.body;
   if (!conversationId) {
     throw new ApiError(400, "Conversation ID is required");
   }
@@ -220,25 +188,22 @@ const addParticipantToGroup = asyncHandler(async (req, res) => {
   for (const p of participants) {
     const userFriend = await Friendship.findOne({
       $or: [
-        { sender: user._id, receiver: p._id, status: "accepted" },
-        { sender: p._id, receiver: user._id, status: "accepted" },
+        { requester: user._id, recipient: p._id, status: "accepted" },
+        { requester: p._id, recipient: user._id, status: "accepted" },
       ],
     });
     if (!userFriend) {
       throw new ApiError(403, `You can only add friends to the group`);
     }
   }
-  if (
-    conversation.participants.some((id) => id.toString() === p._id.toString())
-  ) {
-    const existingUser = participants.find(
-      (u) => u._id.toString() === p._id.toString()
-    );
-    throw new ApiError(
-      400,
-      `User ${existingUser.name} is already in the group`
-    );
-  }
+  participants.forEach((p) => {
+    if (
+      conversation.participants.some((id) => id.toString() === p._id.toString())
+    ) {
+      throw new ApiError(400, `User ${p.name} is already in the group`);
+    }
+  });
+  console.log(`hit`);
   participants.forEach((p) => {
     conversation.participants.push(p._id);
   });
@@ -255,7 +220,8 @@ const removeParticipantFromGroup = asyncHandler(async (req, res) => {
   if (!user) {
     throw new ApiError(400, "User ID is required");
   }
-  const { conversationId, participantId } = req.body;
+  const { conversationId, participantId } = req.params;
+  console.log(conversationId, participantId);
   if (!conversationId) {
     throw new ApiError(400, "Conversation ID is required");
   }
@@ -266,16 +232,9 @@ const removeParticipantFromGroup = asyncHandler(async (req, res) => {
   if (!participantId) {
     throw new ApiError(400, "Participant ID is required");
   }
-  const participant = await User.findById(participantId).select("_id");
+  const participant = await User.findById(participantId).select("_id name");
   if (!participant) {
     throw new ApiError(404, "Participant not found");
-  }
-  //check if the participant is in the conversation or not
-  for (const p of conversation.participants) {
-    if (p.toString() === participant._id.toString()) {
-      break;
-    }
-    throw new ApiError(400, "Participant is not in the conversation");
   }
   const isAdmin = conversation.admin.toString() === user._id.toString();
   const isSelf = participant._id.toString() === user._id.toString();
@@ -285,6 +244,14 @@ const removeParticipantFromGroup = asyncHandler(async (req, res) => {
   if (isSelf) {
     throw new ApiError(403, "You cannot remove yourself"); //this option only be availabe in leave group
   }
+  //check if the participant is in the conversation or not
+  for (const p of conversation.participants) {
+    if (p.toString() !== participant._id.toString()) {
+      break;
+    }
+    throw new ApiError(400, "Participant is not in the conversation");
+  }
+
   await Conversation.findByIdAndUpdate(conversationId, {
     $pull: { participants: participant._id },
   });
@@ -294,7 +261,7 @@ const removeParticipantFromGroup = asyncHandler(async (req, res) => {
       .status(200)
       .json(
         new ApiResponse(
-          { conversation, success: true },
+          { updatedConversation, success: true },
           200,
           "Participant removed successfully"
         )
@@ -318,7 +285,7 @@ const leaveGroupConversation = asyncHandler(async (req, res) => {
   if (!user) {
     throw new ApiError(400, "User ID is required");
   }
-  const { conversationId } = req.body;
+  const { conversationId } = req.params;
   if (!conversationId) {
     throw new ApiError(400, "Conversation ID is required");
   }
@@ -370,7 +337,8 @@ const updateGroupName = asyncHandler(async (req, res) => {
   if (!user) {
     throw new ApiError(400, "User ID is required");
   }
-  const { conversationId, newName } = req.body;
+  const { conversationId } = req.params;
+  const { newName } = req.body;
   if (!conversationId) {
     throw new ApiError(400, "Conversation ID is required");
   }
@@ -424,10 +392,11 @@ const getGroupParticipants = asyncHandler(async (req, res) => {
   if (!conversation) {
     throw new ApiError(404, "Conversation not found");
   }
-  for (const p of conversation.participants) {
-    if (p.toString() === user._id.toString()) {
-      break;
-    }
+  const isParticipant = conversation.participants.some(
+    (p) => p._id.toString() === user._id.toString()
+  );
+  console.log(conversation.participants);
+  if (!isParticipant) {
     throw new ApiError(400, "You are not a participant in this conversation");
   }
   res.status(200).json(

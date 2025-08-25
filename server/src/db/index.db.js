@@ -1,6 +1,4 @@
 import mongoose from "mongoose";
-import { User } from "../models/user.models.js";
-import { Friendship } from "../models/friendship.models.js";
 
 const connectDB = async () => {
   console.log("Connecting to MongoDB...");
