@@ -6,6 +6,7 @@ import { User } from "../models/user.models.js";
 
 const registerUser = asyncHandler(async (req, res) => {
   const { name, userId, email, password } = req.body;
+  console.log(req.body);
   if (
     [name, userId, email, password].some(
       (field) => !field || field.trim() === ""
@@ -74,6 +75,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
 const loginUser = asyncHandler(async (req, res) => {
   const { identifier, password } = req.body;
+  console.log(`Login attempt for user: ${identifier}`);
   if (!identifier || !password) {
     throw new ApiError(400, "Email or User ID and password are required");
   }
