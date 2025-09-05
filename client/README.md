@@ -1,20 +1,4 @@
 
-Step 3 → Auth Context
-
-File: src/context/AuthContext.jsx
-
-Why: To manage global auth state (user, token, login/logout methods).
-
-What:
-
-Store user + token.
-
-login() → save user/token.
-
-logout() → clear everything.
-
-Auto-refresh (optional at this stage).
-
 Step 4 → Hook
 
 File: src/hooks/useAuth.js

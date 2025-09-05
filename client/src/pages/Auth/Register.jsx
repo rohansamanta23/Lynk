@@ -1,20 +1,15 @@
 import RegisterForm from "@/components/forms/RegisterForm";
-import useAuth from "@/hooks/useAuth";
+import { useAuthContext } from "@/context/AuthContext";
 import { toast } from "sonner";
 
 export default function Register() {
-  const { register } = useAuth();
+  const { register } = useAuthContext();
 
   const handleRegister = async (data) => {
     try {
-      const res = await register(data);
-      toast.success(res.message || "Registration successful! Welcome 🎉");
+      await register(data);
     } catch (error) {
-      const msg =
-        error?.response?.data?.message ||
-        error?.message ||
-        "Registration failed. Please try again.";
-      toast.error(msg);
+      console.error(error);
     }
   };
 

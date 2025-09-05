@@ -1,9 +1,6 @@
 import jwt from "jsonwebtoken";
 import { User } from "../../models/user.models.js";
 
-const pick = (obj, keys) =>
-  keys.reduce((acc, k) => (obj?.[k] !== undefined ? ((acc[k] = obj[k]), acc) : acc), {});
-
 export const socketAuth = async (socket, next) => {
   try {
     const token =
