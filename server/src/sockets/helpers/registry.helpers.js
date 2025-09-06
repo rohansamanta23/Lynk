@@ -21,37 +21,74 @@ export const initIO = (server, opts = {}) => {
   });
   return io;
 };
-
-export const userRoom = (userId) => `user:${userId}`;
-export const conversationRoom = (conversationId) =>
-  `conversation:${conversationId}`;
-// Adds socket ID for a user
 export const markOnline = (userId, socketId) => {
-  if (!onlineUsers.has(userId)) onlineUsers.set(userId, new Set());
-  onlineUsers.get(userId).add(socketId);
+  let set = onlineUsers.get(userId);
+  const had = !!set && set.size > 0;
+  if (!set) {
+    set = new Set();
+    onlineUsers.set(userId, set);
+  }
+  set.add(socketId);
+  return { first: !had, size: set.size };
 };
-// Removes socket ID, deletes user if no connections left
+
 export const markOffline = (userId, socketId) => {
   const set = onlineUsers.get(userId);
-  if (!set) return;
+  if (!set) return { last: true, size: 0 };
   set.delete(socketId);
-  if (set.size === 0) onlineUsers.delete(userId);
-};
-// Quick check if user is currently online
-export const isOnline = (userId) => onlineUsers.has(userId);
-
-export const emitToUser = (userId, event, payload) => {
-  getIO().to(userRoom(userId)).emit(event, payload);
+  const size = set.size;
+  if (size === 0) onlineUsers.delete(userId);
+  return { last: size === 0, size };
 };
 
-export const emitToUsers = (userIds, event, payload) => {
-  const rooms = userIds.map(userRoom);
-  getIO().to(rooms).emit(event, payload);
+export const userRoom = (userId) => `user:${userId}`; //room for all devices of user
+
+export const getUserSockets = (userId) => {
+  //if user have multiple devices
+  return onlineUsers.get(userId) || new Set();
 };
 
-export const emitToConversation = (conversationId, event, payload) => {
-  getIO().to(conversationRoom(conversationId)).emit(event, payload);
+//emit to all devices of user
+export const emitToUser = (userId, event, data) => {
+  const sockets = onlineUsers.get(userId);
+  if (!sockets) return;
+  sockets.forEach((socketId) => {
+    getIO().to(socketId).emit(event, data);
+  });
 };
 
-// Returns a list of all online user IDs
-export const getOnlineUsers = () => Array.from(onlineUsers.keys());
+//emit to multiple users
+export const emitToUsers = (userIds, event, data) => {
+  userIds.forEach((userId) => {
+    const sockets = onlineUsers.get(userId);
+    if (!sockets) return;
+
+    sockets.forEach((socketId) => {
+      getIO().to(socketId).emit(event, data);
+    });
+  });
+};
+
+// export const conversationRoom = (conversationId) =>
+//   `conversation:${conversationId}`;
+// // Adds socket ID for a user
+// export const markOnline = (userId, socketId) => {
+//   if (!onlineUsers.has(userId)) onlineUsers.set(userId, new Set());
+//   onlineUsers.get(userId).add(socketId);
+// };
+// // Removes socket ID, deletes user if no connections left
+// export const markOffline = (userId, socketId) => {
+//   const set = onlineUsers.get(userId);
+//   if (!set) return;
+//   set.delete(socketId);
+//   if (set.size === 0) onlineUsers.delete(userId);
+// };
+// // Quick check if user is currently online
+// export const isOnline = (userId) => onlineUsers.has(userId);
+
+// export const emitToConversation = (conversationId, event, payload) => {
+//   getIO().to(conversationRoom(conversationId)).emit(event, payload);
+// };
+
+// // Returns a list of all online user IDs
+// export const getOnlineUsers = () => Array.from(onlineUsers.keys());

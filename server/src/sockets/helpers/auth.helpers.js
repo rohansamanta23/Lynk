@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import { User } from "../../models/user.models.js";
 
-export const socketAuth = async (socket, next) => {
+const socketAuth = async (socket, next) => {
   try {
     const token =
       socket.handshake.auth?.token ||
@@ -34,3 +34,5 @@ export const socketAuth = async (socket, next) => {
     next(new Error("Unauthorized"));
   }
 };
+
+export { socketAuth };

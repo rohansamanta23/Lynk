@@ -1,16 +1,27 @@
 import { createServer } from "http";
-import { Server } from "socket.io";
 import { app } from "./app.js";
 import { connectDB } from "./db/index.db.js";
-// import { privateChatSetup } from "./socket/privateChat.js";
+import { attachSocket } from "./sockets/index.sockets.js";
+
 const httpServer = createServer(app);
-const io = new Server(httpServer, {
-  cors: {
-    origin: process.env.CORS_ORIGIN || "*",
-  },
+const io = attachSocket(httpServer, {
+  origin: process.env.CORS_ORIGIN || "http://localhost:5173",
 });
 
-// privateChatSetup(io);
+// ✅ Socket connection test
+io.on("connection", (socket) => {
+  console.log("User connected:", socket.id);
+
+  // test event
+  socket.on("hello", (data) => {
+    console.log("Got hello:", data);
+    socket.emit("hello", "Hello back from server!");
+  });
+
+  socket.on("disconnect", () => {
+    console.log("User disconnected:", socket.id);
+  });
+});
 
 connectDB()
   .then(() => {
