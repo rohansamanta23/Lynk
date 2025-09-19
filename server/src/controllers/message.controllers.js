@@ -4,21 +4,36 @@ import {
   sendMessageService,
   getMessagesService,
   markMessagesReadService,
-} from "../services/message.service.js";
+} from "../services/message.services.js";
 
 // SEND MESSAGE
 const sendMessage = asyncHandler(async (req, res) => {
-  const message = await sendMessageService(req.user, req.body.conversationId, req.body.content);
+  const message = await sendMessageService(
+    req.user,
+    req.body.conversationId,
+    req.body.content
+  );
   res
     .status(201)
-    .json(new ApiResponse({ message, success: true }, 201, "Message sent successfully"));
+    .json(
+      new ApiResponse(
+        { message, success: true },
+        201,
+        "Message sent successfully"
+      )
+    );
 });
 
 // GET MESSAGES
 const getMessages = asyncHandler(async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 20;
-  const result = await getMessagesService(req.user, req.params.conversationId, page, limit);
+  const result = await getMessagesService(
+    req.user,
+    req.params.conversationId,
+    page,
+    limit
+  );
 
   res.status(200).json(new ApiResponse(result, 200, "Messages retrieved"));
 });

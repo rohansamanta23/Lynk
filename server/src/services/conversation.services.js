@@ -34,17 +34,37 @@ const createPrivateConversationService = async (userId, friendId) => {
   });
   if (!conversation)
     throw new ApiError(500, "Failed to create private conversation");
-
+  console.log(`Created new private conversation ${conversation._id}`);
   return conversation;
 };
 
 // FETCH CONVERSATIONS
 const getConversationsService = async (userId) => {
-  return Conversation.find({ participants: userId })
-    .populate("participants", "name userId")
+  const conversations = await Conversation.find({ participants: userId })
+    .populate("participants", "name userId status")
     .populate("lastMessage")
     .sort({ updatedAt: -1 })
     .lean();
+
+  return conversations.map((conv) => {
+    if (!conv.isGroup) {
+      const otherUser = conv.participants.find(
+        (p) => p._id.toString() !== userId.toString()
+      );
+
+      return {
+        ...conv,
+        displayUser: otherUser, // the "other" participant
+        displayName: otherUser?.name, // easy access for frontend
+      };
+    }
+
+    // for groups, just keep the group info
+    return {
+      ...conv,
+      displayName: conv.name,
+    };
+  });
 };
 
 const getConversationByIdService = async (conversationId, userId) => {

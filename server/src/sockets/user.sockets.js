@@ -1,62 +1,67 @@
 import {
-  emitToUsers,
   markOnline,
   markOffline,
   userRoom,
 } from "./helpers/registry.helpers.js";
-import { Friendship } from "../models/friendship.models.js";
 
-// find all accepted-friends for a user
-const friendIdsOf = async (userId) => {
-  const links = await Friendship.find({
-    status: "accepted",
-    $or: [{ requester: userId }, { recipient: userId }],
-  }).select("requester recipient");
-  return links.map((f) =>
-    f.requester.toString() === userId.toString() ? f.recipient : f.requester
-  );
-};
+export const userSockets = (io, socket) => {
+  const userId = socket.user._id.toString();
+  try {
+    // join canonical user room (so we can simply io.to(userRoom(userId)).emit(...))
+    socket.join(userRoom(userId));
 
-export const registerUserHandlers = (io, socket) => {
-  const uid = socket.user._id.toString();
-
-  // join personal room for targeted emits
-  socket.join(userRoom(uid));
-
-  // presence: mark online and notify friends
-  markOnline(uid, socket.id);
-
-  (async () => {
+    const { first } = markOnline(userId, socket.id);
+    if (first) {
+      // If you have a friend list service, get friend ids and notify those
+      // const friends = await getFriendsIds(userId);
+      // emitToUsers(friends, "presence:changed", { userId, online: true });
+      // For a starter, you can broadcast globally (not recommended for large apps):
+      io.emit("presence:changed", { userId, online: true });
+    }
+  } catch (err) {
+    console.error(`[userSockets] Failed to mark user ${userId} online:`, err);
+  }
+  socket.on("disconnect", () => {
     try {
-      const friends = await friendIdsOf(uid);
-      emitToUsers(
-        friends,
-        "user:online",
-        { userId: uid }
+      const { last } = markOffline(userId, socket.id);
+      if (last) {
+        // notify friends *only on last disconnect* (not every tab)
+        // const friends = await getFriendsIds(userId);
+        // emitToUsers(friends, "presence:changed", { userId, online: false });
+        io.emit("presence:changed", { userId, online: false });
+      }
+    } catch (err) {
+      console.error(
+        `[userSockets] Failed to mark user ${userId} offline:`,
+        err
       );
-    } catch {}
-  })();
-
-  // optional: user-typing (global channel)
-  socket.on("user:typing", (payload = {}) => {
-    // e.g. payload = { isTyping: true }
-    socket.broadcast.emit("user:typing", {
-      userId: uid,
-      isTyping: !!payload.isTyping,
-    });
-  });
-
-  socket.on("disconnect", async () => {
-    markOffline(uid, socket.id);
-
-    // if fully offline (no more sockets), notify friends
-    try {
-      const friends = await friendIdsOf(uid);
-      emitToUsers(
-        friends,
-        "user:offline",
-        { userId: uid }
-      );
-    } catch {}
+    }
   });
 };
+
+// // Update profile
+// socket.on("user:update", async (payload, ack) => {
+//   const { name, userId, password } = payload || {};
+//   if (!name?.trim() && !userId?.trim() && !password?.trim()) {
+//     ack?.({ ok: false, error: "Invalid payload" });
+//     return;
+//   }
+//   try {
+//     const updatedUser = await updateUserService(me, payload);
+//     // Only notify friends if name or userId is updated
+//     if (payload.name?.trim() || payload.userId?.trim()) {
+//       const friendsList = await getFriendListService(me);
+//       const friendIds = friendsList.map((f) => f.friend._id.toString());
+//       emitToUsers(friendIds, "user:updated", {
+//         user: {
+//           _id: updatedUser.user._id,
+//           name: updatedUser.user.name,
+//           userId: updatedUser.user.userId,
+//         },
+//       });
+//     }
+//     ack?.({ ok: true, user: updatedUser.user, changes: updatedUser.changes });
+//   } catch (err) {
+//     ack?.({ ok: false, error: err.message || "Failed to update user" });
+//   }
+// });

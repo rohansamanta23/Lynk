@@ -5,11 +5,12 @@ import { ApiError } from "../utils/ApiError.js";
 // SEND REQUEST
 const sendFriendRequestService = async (authUserId, recipientUserId) => {
   if (!recipientUserId) throw new ApiError(400, "Recipient ID is required");
-  if (recipientUserId.toString() === authUserId.toString())
-    throw new ApiError(400, "You cannot send a friend request to yourself");
-
   const recipient = await User.findOne({ userId: recipientUserId });
   if (!recipient) throw new ApiError(404, "Recipient not found");
+
+  if (recipient._id.toString() === authUserId.toString()) {
+    throw new ApiError(400, "You cannot send a friend request to yourself");
+  }
 
   const existingFriendship = await Friendship.findOne({
     $or: [
@@ -30,14 +31,19 @@ const sendFriendRequestService = async (authUserId, recipientUserId) => {
     }
   }
 
-  return await Friendship.create({
+  const friendship = await Friendship.create({
     requester: authUserId,
     recipient: recipient._id,
   });
+  console.log(`Friend request sent: ${friendship._id}`);
+  return friendship;
 };
 
 // CANCEL REQUEST
 const cancelFriendRequestService = async (authUserId, friendshipId) => {
+  console.log(
+    `Cancelling friend request: ${friendshipId} for user: ${authUserId}`
+  );
   const friendship = await Friendship.findById(friendshipId);
   if (!friendship) throw new ApiError(404, "Friendship not found");
 
@@ -49,8 +55,8 @@ const cancelFriendRequestService = async (authUserId, friendshipId) => {
 
   if (friendship.status !== "pending")
     throw new ApiError(400, "Friend request is not pending");
-
   await friendship.deleteOne();
+  console.log(`Friend request cancelled: ${friendship._id}`);
   return friendship;
 };
 
@@ -73,6 +79,7 @@ const acceptFriendRequestService = async (authUserId, friendshipId) => {
 
   friendship.status = "accepted";
   await friendship.save();
+  console.log(`Friend request accepted: ${friendship._id}`);
   return friendship;
 };
 
@@ -91,11 +98,12 @@ const rejectFriendRequestService = async (authUserId, friendshipId) => {
   }
 
   await friendship.deleteOne();
+  console.log(`Friend request rejected: ${friendship._id}`);
   return friendship;
 };
 
 // BLOCK FRIEND
-export const blockFriendService = async (authUserId, friendshipId) => {
+const blockFriendService = async (authUserId, friendshipId) => {
   const friendship = await Friendship.findById(friendshipId);
   if (!friendship) throw new ApiError(404, "Friendship not found");
 
@@ -125,7 +133,7 @@ const unblockFriendService = async (authUserId, friendshipId) => {
   if (!friendship) throw new ApiError(404, "Friendship not found");
 
   if (friendship.status !== "blocked")
-    throw new ApiError(400, "Friendship is not blocked");
+    throw new ApiError(400, "Friend is not blocked");
 
   if (friendship.blockedBy?.toString() !== authUserId.toString())
     throw new ApiError(403, "Only the blocker can unblock");
@@ -227,16 +235,16 @@ const getBlockedListService = async (authUserId) => {
   }));
 };
 
-export{
-    sendFriendRequestService,
-    cancelFriendRequestService,
-    acceptFriendRequestService,
-    rejectFriendRequestService,
-    getBlockedListService,
-    getSentFriendRequestsService,
-    getPendingFriendRequestsService,
-    getFriendListService,
-    removeFriendService,
-    blockFriendService,
-    unblockFriendService,
-}
+export {
+  sendFriendRequestService,
+  cancelFriendRequestService,
+  acceptFriendRequestService,
+  rejectFriendRequestService,
+  getBlockedListService,
+  getSentFriendRequestsService,
+  getPendingFriendRequestsService,
+  getFriendListService,
+  removeFriendService,
+  blockFriendService,
+  unblockFriendService,
+};
