@@ -45,7 +45,7 @@ const schema = yup.object({
     .required("Please confirm your password"),
 });
 
-export default function RegisterForm({ onSubmit, loginHref = "/login" }) {
+export default function RegisterForm({ onSubmit, loginHref = "/auth/login" }) {
   const form = useForm({
     resolver: yupResolver(schema),
     mode: "onSubmit",

@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import { loginUser, registerUser} from "@/api/authApi";
+import { loginUser, registerUser, refreshUser, getMe } from "@/api/authApi";
 import { toast } from "sonner";
 
 const AuthContext = createContext();
@@ -12,8 +12,9 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // later we’ll call /refresh or /me endpoint
-        // for now we just set loading false
+        await refreshUser(); // get new access token
+        const meRes = await getMe(); // get user info
+        setUser(meRes.data || null);
       } catch (error) {
         setUser(null);
       } finally {
@@ -30,7 +31,8 @@ export const AuthProvider = ({ children }) => {
       toast.success(res.message || "Logged in successfully!");
       return res;
     } catch (error) {
-      const msg = error?.message || error?.response?.data?.message || "Login failed.";
+      const msg =
+        error?.message || error?.response?.data?.message || "Login failed.";
       toast.error(msg);
       throw error;
     }
@@ -43,20 +45,23 @@ export const AuthProvider = ({ children }) => {
       toast.success(res.message || "Registered successfully!");
       return res;
     } catch (error) {
-      const msg = error?.message || error?.response?.data?.message || "Registration failed.";
+      const msg =
+        error?.message ||
+        error?.response?.data?.message ||
+        "Registration failed.";
       toast.error(msg);
       throw error;
     }
   };
 
-//   const logout = async () => {
-//     try {
-//       await logoutUser();
-//     } finally {
-//       setUser(null);
-//       toast.success("Logged out successfully!");
-//     }
-//   };
+  //   const logout = async () => {
+  //     try {
+  //       await logoutUser();
+  //     } finally {
+  //       setUser(null);
+  //       toast.success("Logged out successfully!");
+  //     }
+  //   };
 
   return (
     <AuthContext.Provider
