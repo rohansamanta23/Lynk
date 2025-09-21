@@ -34,7 +34,7 @@ const registerUserService = async ({ name, userId, email, password }) => {
 
   user.refreshToken = refreshToken;
   await user.save();
-
+  console.log(`New user registered: ${user.userId}`);
   return { user: userCreated, accessToken, refreshToken };
 };
 
@@ -62,7 +62,7 @@ const loginUserService = async ({ identifier, password }) => {
 
   loggedInUser.refreshToken = refreshToken;
   await loggedInUser.save();
-
+  console.log(`User logged in: ${loggedInUser.userId}`);
   return { user: loggedInUser, accessToken, refreshToken };
 };
 
@@ -70,6 +70,7 @@ const loginUserService = async ({ identifier, password }) => {
 const logoutUserService = async (userId) => {
   const user = await User.findByIdAndUpdate(userId, { refreshToken: null });
   if (!user) throw new ApiError(404, "User not found");
+  console.log(`User logged out: ${user.userId}`);
   return true;
 };
 
@@ -92,6 +93,7 @@ const refreshAccessTokenService = async (refreshToken) => {
   }
 
   const newAccessToken = user.generateAccessToken();
+  console.log(`New access token generated for user ${user.userId}`);
   return { accessToken: newAccessToken };
 };
 

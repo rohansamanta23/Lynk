@@ -6,7 +6,6 @@ function AuthLayout() {
   return (
     <>
       <Navbar />
-      <div className='h-[10vh]'></div>
       <Outlet />
       <Toaster />
     </>

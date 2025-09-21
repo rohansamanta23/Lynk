@@ -22,6 +22,17 @@ export const AuthProvider = ({ children }) => {
       }
     };
     checkAuth();
+
+    // Set up interval to refresh token every 55 minutes
+    const interval = setInterval(async () => {
+      try {
+        await refreshUser();
+      } catch (error) {
+        // Optionally handle refresh error (e.g., log out user)
+        setUser(null);
+      }
+    }, 55 * 60 * 1000); // 55 minutes
+    return () => clearInterval(interval);
   }, []);
 
   const login = async (credentials) => {

@@ -1,5 +1,6 @@
 import { createBrowserRouter } from "react-router-dom";
 import AuthLayout from "../layouts/AuthLayout";
+import ChatLayout from "../layouts/ChatLayout";
 import Login from "../pages/Auth/Login";
 import Register from "../pages/Auth/Register";
 import Home from "../pages/Home";
@@ -11,7 +12,7 @@ const AppRouter = createBrowserRouter([
     path: "/",
     element: (
       <ProtectedRoute>
-        <Home />
+        <ChatLayout />
       </ProtectedRoute>
     ),
     errorElement: <NotFound />,
@@ -19,7 +20,12 @@ const AppRouter = createBrowserRouter([
   {
     path: "/auth",
     element: <AuthLayout />,
+    errorElement: <NotFound />,
     children: [
+      {
+        index: true,
+        element: <Home />,
+      },
       {
         path: "login",
         element: <Login />,

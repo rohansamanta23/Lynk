@@ -5,8 +5,7 @@ import { Toaster } from "@/components/ui/sonner.jsx";
 function ChatLayout() {
   return (
     <>
-      <Navbar />
-      <div className='h-[10vh]'></div>
+      <h1 className="text-2xl font-bold">Chat Application</h1>
       <Toaster />
     </>
   );

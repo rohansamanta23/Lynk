@@ -16,5 +16,10 @@ export default function Login() {
     }
   };
 
-  return <LoginForm onSubmit={handleLogin} />;
+  return (
+    <>
+      <div className='h-[10vh]'></div>
+      <LoginForm onSubmit={handleLogin} />
+    </>
+  );
 }

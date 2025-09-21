@@ -16,5 +16,10 @@ export default function Register() {
     }
   };
 
-  return <RegisterForm onSubmit={handleRegister} />;
+  return (
+      <>
+        <div className='h-[10vh]'></div>
+        <RegisterForm onSubmit={handleRegister} />
+      </>
+  );
 }
