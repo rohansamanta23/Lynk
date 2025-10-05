@@ -1,4 +1,5 @@
 import { emitToUser } from "./helpers/registry.helpers.js";
+import { User } from "../models/user.models.js";
 import {
   sendFriendRequestService,
   cancelFriendRequestService,
@@ -11,6 +12,7 @@ import {
 import { createPrivateConversationService } from "../services/conversation.services.js";
 
 export const friendSockets = (io, socket) => {
+
   const me = socket.user;
   if (!me) {
     socket.disconnect(true);
@@ -24,7 +26,6 @@ export const friendSockets = (io, socket) => {
     _id: String(f._id),
     requester: String(f.requester),
     recipient: String(f.recipient),
-    status: f.status,
   });
 
   // ---- send friend request
@@ -44,7 +45,19 @@ export const friendSockets = (io, socket) => {
           _id: myId,
           name: me.name,
           userId: me.userId,
-          status: me.status,
+        },
+      });
+
+      // notify requester (sender) as well, with recipient info from DB
+      const recipientUser = await User.findById(payload.recipient).select(
+        "name userId"
+      );
+      emitToUser(payload.requester, "friend:sent", {
+        friendshipId: payload._id,
+        recipient: {
+          _id: payload.recipient,
+          name: recipientUser?.name || "",
+          userId: recipientUser?.userId || "",
         },
       });
 
@@ -56,7 +69,6 @@ export const friendSockets = (io, socket) => {
   });
 
   // ---- cancel sent request
-  // Note: service should return a snapshot (see suggestions below). We defensively normalize here.
   socket.on("friend:cancel", async ({ friendshipId }, ack) => {
     try {
       if (!friendshipId) {

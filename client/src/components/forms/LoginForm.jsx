@@ -1,6 +1,6 @@
 // src/components/forms/LoginForm.jsx
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -54,7 +54,7 @@ export default function LoginForm({
       if (onSubmit) {
         await onSubmit(values);
       } else {
-        console.log("Login values:", values); // fallback for testing
+        // ...
       }
     } catch (err) {
       form.setError("root", { message: err?.message || "Login failed" });

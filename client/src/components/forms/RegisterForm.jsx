@@ -1,6 +1,6 @@
 // src/components/forms/RegisterForm.jsx
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -69,7 +69,7 @@ export default function RegisterForm({ onSubmit, loginHref = "/auth/login" }) {
       if (onSubmit) {
         await onSubmit(submitValues);
       } else {
-        console.log("Register values:", submitValues);
+        // ...
       }
     } catch (err) {
       form.setError("root", { message: err?.message || "Registration failed" });

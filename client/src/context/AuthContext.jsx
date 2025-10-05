@@ -1,20 +1,37 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import { loginUser, registerUser, refreshUser, getMe } from "@/api/authApi";
+import { useLocation } from "react-router-dom";
+import {
+  loginUser,
+  registerUser,
+  refreshUser,
+  getMe,
+  logoutUser,
+} from "@/api/authApi";
 import { toast } from "sonner";
+import { socket } from "@/socket"; // 👈 import socket
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const location = useLocation();
 
-  // --- On mount: check if already logged in (cookies available) ---
   useEffect(() => {
+    if (location.pathname.startsWith("/auth")) {
+      setLoading(false);
+      setUser(null);
+      return;
+    }
     const checkAuth = async () => {
       try {
-        await refreshUser(); // get new access token
-        const meRes = await getMe(); // get user info
+        await refreshUser();
+        const meRes = await getMe();
         setUser(meRes.data || null);
+        // If authenticated, connect socket
+        if (!socket.connected) {
+          socket.connect();
+        }
       } catch (error) {
         setUser(null);
       } finally {
@@ -23,15 +40,14 @@ export const AuthProvider = ({ children }) => {
     };
     checkAuth();
 
-    // Set up interval to refresh token every 55 minutes
     const interval = setInterval(async () => {
       try {
         await refreshUser();
       } catch (error) {
-        // Optionally handle refresh error (e.g., log out user)
         setUser(null);
       }
-    }, 55 * 60 * 1000); // 55 minutes
+    }, 55 * 60 * 1000);
+
     return () => clearInterval(interval);
   }, []);
 
@@ -65,14 +81,29 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  //   const logout = async () => {
-  //     try {
-  //       await logoutUser();
-  //     } finally {
-  //       setUser(null);
-  //       toast.success("Logged out successfully!");
-  //     }
-  //   };
+  const logout = async () => {
+    try {
+      await logoutUser(); // API call if you have one
+      toast.success("Logged out successfully!");
+    } catch (error) {
+      const msg =
+        error?.message || error?.response?.data?.message || "Logout failed.";
+      toast.error(msg);
+      throw error;
+    } finally {
+      setUser(null);
+
+      // 👇 disconnect socket and clear token
+      if (socket.connected) {
+        socket.disconnect();
+        // ...
+      }
+      // Optionally clear socket.auth.token (not strictly needed, but for safety)
+      if (socket.auth) {
+        socket.auth.token = undefined;
+      }
+    }
+  };
 
   return (
     <AuthContext.Provider
@@ -82,7 +113,7 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated: !!user,
         login,
         register,
-        // logout,
+        logout,
       }}
     >
       {children}
@@ -90,7 +121,4 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-// --- Custom hook to consume context ---
-export const useAuthContext = () => {
-  return useContext(AuthContext);
-};
+export const useAuthContext = () => useContext(AuthContext);

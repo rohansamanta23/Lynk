@@ -11,13 +11,6 @@ const io = attachSocket(httpServer, {
 // ✅ Socket connection test
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
-
-  // test event
-  socket.on("hello", (data) => {
-    console.log("Got hello:", data);
-    socket.emit("hello", "Hello back from server!");
-  });
-
   socket.on("disconnect", () => {
     console.log("User disconnected:", socket.id);
   });

@@ -12,14 +12,14 @@ export default function Register() {
       await register(data);
       navigate("/", { replace: true });
     } catch (error) {
-      console.error(error);
+      // ...
     }
   };
 
   return (
-      <>
-        <div className='h-[10vh]'></div>
-        <RegisterForm onSubmit={handleRegister} />
-      </>
+    <>
+      <div className='h-[10vh]'></div>
+      <RegisterForm onSubmit={handleRegister} />
+    </>
   );
 }

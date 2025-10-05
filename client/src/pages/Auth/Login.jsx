@@ -12,7 +12,7 @@ export default function Login() {
       await login(data);
       navigate("/", { replace: true });
     } catch (error) {
-      console.error(error);
+      // ...
     }
   };
 

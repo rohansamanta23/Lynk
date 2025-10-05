@@ -1,7 +1,6 @@
 import API from "./axios.js";
 
 const registerUser = async (formData) => {
-  console.log(formData);
   try {
     const response = await API.post("/auth/register", formData);
     return response.data;
@@ -21,7 +20,6 @@ const registerUser = async (formData) => {
 };
 
 const loginUser = async (formData) => {
-  console.log(formData);
   try {
     const response = await API.post("/auth/login", formData);
     return response.data;
@@ -55,6 +53,21 @@ const refreshUser = async () => {
   }
 };
 
+const logoutUser = async () => {
+  try {
+    const response = await API.post("/auth/logout");
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      throw new Error(error.response.data?.message || "Request failed");
+    } else if (error.request) {
+      throw new Error("Server not reachable. Please try again later.");
+    } else {
+      throw new Error("Unexpected error occurred.");
+    }
+  }
+};
+
 const getMe = async () => {
   try {
     const response = await API.get("/user/me");
@@ -70,4 +83,4 @@ const getMe = async () => {
   }
 };
 
-export { registerUser, loginUser, refreshUser, getMe };
+export { registerUser, loginUser, logoutUser, refreshUser, getMe };

@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -117,4 +118,27 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px; /* slim */
+}
+
+::-webkit-scrollbar-track {
+  background: transparent; /* keeps it clean */
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #c0c0c0, #6e6e6e); /* silver gradient */
+  border-radius: 9999px; /* fully rounded */
+  border: 2px solid #0f0f0f; /* matches dark bg */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #d9d9d9, #8c8c8c); /* brighter on hover */
+}
+
+
+.font-style {
+  font-family: "Manrope", sans-serif;
 }
