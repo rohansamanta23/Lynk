@@ -1,5 +1,6 @@
 import { User } from "../models/user.models.js";
 import { Friendship } from "../models/friendship.models.js";
+import { Conversation } from "../models/conversation.models.js";
 import { ApiError } from "../utils/ApiError.js";
 
 // SEND REQUEST
@@ -168,7 +169,14 @@ const removeFriendService = async (authUserId, friendshipId) => {
   ) {
     throw new ApiError(403, "Only the blocker can delete a blocked friendship");
   }
-
+  const conversation = await Conversation.findOne({
+    isGroup: false,
+    participants: { $all: [friendship.requester, friendship.recipient] },
+  });
+  if (!conversation) {
+    throw new ApiError(404, "Conversation not found");
+  }
+  await conversation.deleteOne();
   await friendship.deleteOne();
   return friendship;
 };

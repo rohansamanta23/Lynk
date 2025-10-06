@@ -12,13 +12,13 @@ export default function Home() {
         </p>
         <div className='flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center'>
           <a
-            href='/register'
+            href='/auth/register'
             className='px-6 sm:px-8 py-3 rounded-xl bg-sky-500 text-black font-semibold hover:bg-sky-400 transition text-base sm:text-lg w-full sm:w-auto'
           >
             Get Started
           </a>
           <a
-            href='/login'
+            href='/auth/login'
             className='px-6 sm:px-8 py-3 rounded-xl border border-gray-600 hover:bg-gray-800 transition text-base sm:text-lg w-full sm:w-auto'
           >
             Login

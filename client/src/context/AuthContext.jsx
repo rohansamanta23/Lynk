@@ -55,6 +55,10 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await loginUser(credentials);
       setUser(res.data.user);
+      // Connect socket after login to update online status
+      if (!socket.connected) {
+        socket.connect();
+      }
       toast.success(res.message || "Logged in successfully!");
       return res;
     } catch (error) {

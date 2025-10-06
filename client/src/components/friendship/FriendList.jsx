@@ -15,59 +15,107 @@ import {
   stopListenFriendAccepted,
   listenFriendRemoved,
   stopListenFriendRemoved,
-  removeFriend, // ✅ added
+  removeFriend,
 } from "@/socket/events/friendship.js";
+import {
+  listenPresenceChanged,
+  stopListenPresenceChanged,
+} from "@/socket/events/user.js";
 
 export default function FriendList() {
   const [friends, setFriends] = useState([]);
-  const [loadingId, setLoadingId] = useState(null); // ✅ to prevent multiple clicks
+  const [loadingId, setLoadingId] = useState(null);
 
-  // 🔹 Fetch initial friend list
+  // 🔹 Sort by friend name
+  const sortFriends = (list) =>
+    [...list].sort((a, b) => {
+      const nameA = (a.friend?.name || a.name || "").toLowerCase();
+      const nameB = (b.friend?.name || b.name || "").toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
+
+  // 🔹 Fetch initial list
+  const fetchFriends = async () => {
+    try {
+      const data = await getFriendList();
+      setFriends(sortFriends(data));
+    } catch {
+      toast.error("Failed to fetch friends.");
+    }
+  };
+
   useEffect(() => {
-    const fetchFriends = async () => {
-      try {
-        const data = await getFriendList();
-        setFriends(data);
-      } catch (error) {
-        toast.error("Failed to fetch friends.");
-      }
-    };
-
     fetchFriends();
 
-    // 🔹 When a new friend is accepted, add it live
-    const handleFriendAccepted = (payload) => {
+    // ---- Friend accepted ----
+    const handleFriendAccepted = async (payload) => {
       console.log("[FriendList] friend:accepted", payload);
+
+      if (!payload?.friend || !payload.friend?.name) {
+        await fetchFriends();
+        return;
+      }
+
       setFriends((prev) => {
-        if (prev.some((f) => f.friendshipId === payload.friendshipId)) return prev;
-        return [
-          {
-            friendshipId: payload.friendshipId || payload._id,
-            friend: payload.friend,
-          },
-          ...prev,
-        ];
+        const exists = prev.some(
+          (f) => f.friendshipId === payload.friendshipId
+        );
+        const updated = exists
+          ? prev
+          : [
+              {
+                friendshipId: payload.friendshipId || payload._id,
+                friend: payload.friend,
+              },
+              ...prev,
+            ];
+        return sortFriends(updated);
       });
     };
 
-    // 🔹 When a friend is removed (by either side), remove from list
+    // ---- Friend removed ----
     const handleFriendRemoved = (payload) => {
       console.log("[FriendList] friend:removed", payload);
       setFriends((prev) =>
-        prev.filter((f) => f.friendshipId !== payload.friendshipId)
+        sortFriends(
+          prev.filter((f) => f.friendshipId !== payload.friendshipId)
+        )
+      );
+      toast.info("Friend removed");
+    };
+
+    // ---- Presence change ----
+    const handlePresenceChanged = ({ id, status }) => {
+      console.log("[FriendList] presence changed:", id, status);
+      setFriends((prev) =>
+        prev.map((f) => {
+          const friendId = f.friend?.userId || f.userId || f.id;
+          if (friendId === id) {
+            const updatedFriend = {
+              ...f.friend,
+              status,
+            };
+            return { ...f, friend: updatedFriend };
+          }
+          return f;
+        })
       );
     };
 
+    // Attach listeners
     listenFriendAccepted(handleFriendAccepted);
     listenFriendRemoved(handleFriendRemoved);
+    listenPresenceChanged(handlePresenceChanged);
 
+    // Cleanup listeners
     return () => {
       stopListenFriendAccepted(handleFriendAccepted);
       stopListenFriendRemoved(handleFriendRemoved);
+      stopListenPresenceChanged(handlePresenceChanged);
     };
   }, []);
 
-  // 🔹 Handle friend removal
+  // 🔹 Remove friend
   const handleRemoveFriend = (friendshipId) => {
     if (loadingId) return;
     setLoadingId(friendshipId);
@@ -79,7 +127,7 @@ export default function FriendList() {
       } else {
         toast.success("Friend removed successfully");
         setFriends((prev) =>
-          prev.filter((f) => f.friendshipId !== friendshipId)
+          sortFriends(prev.filter((f) => f.friendshipId !== friendshipId))
         );
       }
     });
@@ -98,17 +146,17 @@ export default function FriendList() {
       <div className="space-y-3 max-h-[80vh] overflow-y-auto pr-2">
         {friends.map((item) => {
           const friendUser = {
-            id: item.friend?.userId || item.userId || item.id || "?",
-            name: item.friend?.name || item.name || "",
+            id: item.friend?.userId || item.userId || item.id || "unknown",
+            name: item.friend?.name || item.name || "Unknown User",
             status: item.friend?.status || item.status || "offline",
           };
 
           return (
             <UserCard
-              key={item.friendshipId || item._id || item.id}
+              key={item.friendshipId || item._id}
               user={friendUser}
               type="friend"
-              active={(friendUser.status || "offline") === "online"}
+              active={(friendUser.status || "offline") === "online"} // ✅ fixed
               menu={
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -122,7 +170,11 @@ export default function FriendList() {
                     className="bg-[#111]/95 backdrop-blur-md border border-[#2a2a2a] text-[#cfcfcf] shadow-[0_4px_20px_rgba(0,0,0,0.7)] rounded-2xl px-1 py-2"
                   >
                     {[
-                      { label: "Message", danger: false, action: () => toast.info("Messaging soon...") },
+                      {
+                        label: "Message",
+                        danger: false,
+                        action: () => toast.info("Messaging soon..."),
+                      },
                       {
                         label:
                           loadingId === item.friendshipId
@@ -131,7 +183,11 @@ export default function FriendList() {
                         danger: false,
                         action: () => handleRemoveFriend(item.friendshipId),
                       },
-                      { label: "Block", danger: true, action: () => toast.info("Block feature coming soon") },
+                      {
+                        label: "Block",
+                        danger: true,
+                        action: () => toast.info("Block feature coming soon"),
+                      },
                     ].map((opt, idx, arr) => (
                       <div key={opt.label}>
                         <DropdownMenuItem

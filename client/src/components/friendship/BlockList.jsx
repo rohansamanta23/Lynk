@@ -36,7 +36,7 @@ export default function BlockList() {
       <div className='space-y-3 max-h-[80vh] overflow-y-auto pr-2'>
         {blocked.length === 0 ? (
           <div className='text-center text-gray-400 py-8'>
-            No blocked users.
+            Coming soon: Block list is empty
           </div>
         ) : (
           blocked.map((item) => (

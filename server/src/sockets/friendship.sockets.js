@@ -203,7 +203,7 @@ export const friendSockets = (io, socket) => {
     }
   });
 
-  // ---- block user
+  // ---- block user (coming soon is front end support for this)
   socket.on("friend:block", async ({ friendshipId }, ack) => {
     try {
       if (!friendshipId) {

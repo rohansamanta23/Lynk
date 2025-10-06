@@ -1,4 +1,4 @@
-import FriendshipTabs from "../../components/friendships/FriendshipTabs";
+import FriendshipTabs from "../../components/friendship/FriendshipTabs";
 import { Outlet } from "react-router-dom";
 
 export default function Friendship() {
@@ -7,7 +7,7 @@ export default function Friendship() {
       {/* Left sidebar with separator */}
       <aside className='relative flex'>
         {/* Sidebar */}
-        <div className='w-64 bg-gradient-to-b from-[#121212] to-[#151515] shadow-xl p-0'>
+        <div className='w-65 bg-gradient-to-b from-[#121212] to-[#151515] shadow-xl p-0'>
           <FriendshipTabs />
         </div>
       </aside>

@@ -11,11 +11,11 @@ import NotFound from "../pages/NotFound";
 import { AuthProvider } from "../context/AuthContext";
 import { SocketProvider } from "../socket/SocketProvider";
 
-import FriendList from "../components/friendships/FriendList";
-import FriendRequests from "../components/friendships/FriendRequests";
-import SentRequests from "../components/friendships/SentRequests";
-import FriendSearch from "../components/friendships/FriendSearch";
-import BlockList from "../components/friendships/BlockList";
+import FriendList from "../components/friendship/FriendList";
+import FriendRequests from "../components/friendship/FriendRequests";
+import SentRequests from "../components/friendship/SentRequests";
+import FriendSearch from "../components/friendship/FriendSearch";
+import BlockList from "../components/friendship/BlockList";
 
 const AppRouter = createBrowserRouter([
   {

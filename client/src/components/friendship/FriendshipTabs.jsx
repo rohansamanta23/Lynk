@@ -38,7 +38,7 @@ export default function FriendshipTabs() {
       : "text-[#e5e5e5] hover:bg-[#555]/10 hover:text-[#00b4ff] border border-transparent hover:border-[#bfbfbf]");
 
   return (
-    <aside className='w-64 p-6 flex flex-col shadow-xl backdrop-blur-xl min-h-screen'>
+    <aside className='w-64 py-6 px-2 flex flex-col shadow-xl backdrop-blur-xl min-h-screen'>
       <h2 className='text-2xl font-bold tracking-wider bg-gradient-to-r from-[#00b4ff] to-[#0077ff] bg-clip-text text-transparent drop-shadow mb-4'>
         Tabs
       </h2>

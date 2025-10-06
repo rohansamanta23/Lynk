@@ -13,6 +13,18 @@ const getUserService = async (authUser) => {
   return user;
 };
 
+// Update user status (online/offline)
+const userStatusUpdate = async (authUser, status) => {
+  if (!authUser) throw new ApiError(404, "User not found");
+  const user = await User.findById(authUser._id).select("status");
+  if (!user) throw new ApiError(404, "User not found");
+
+  user.status = status;
+  await user.save();
+
+  return user;
+};
+
 // Update user profile
 const updateUserService = async (authUser, { name, userId, password }) => {
   if (!authUser) throw new ApiError(404, "User not authenticated");
@@ -99,6 +111,7 @@ const searchUsersService = async (authUser, query) => {
 
 export {
   getUserService,
+  userStatusUpdate,
   updateUserService,
   deleteUserService,
   searchUsersService,
