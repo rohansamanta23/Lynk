@@ -16,6 +16,7 @@ import FriendRequests from "../components/friendship/FriendRequests";
 import SentRequests from "../components/friendship/SentRequests";
 import FriendSearch from "../components/friendship/FriendSearch";
 import BlockList from "../components/friendship/BlockList";
+import ChatWindow from "../components/conversation/ChatWindow";
 
 const AppRouter = createBrowserRouter([
   {
@@ -38,6 +39,20 @@ const AppRouter = createBrowserRouter([
       {
         path: "chat",
         element: <Chat />,
+        children: [
+          {
+            index: true,
+            element: (
+              <div className='p-4 text-gray-400'>
+                Select a conversation to start chatting
+              </div>
+            ),
+          },
+          {
+            path: ":conversationId",
+            element: <ChatWindow />,
+          },
+        ],
       },
       {
         path: "friendship",

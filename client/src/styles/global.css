@@ -137,8 +137,33 @@
 ::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, #d9d9d9, #8c8c8c); /* brighter on hover */
 }
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #0f0f0f;
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 10px;
+  transition: background 0.2s;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #00b4ff;
+}
+
+/* For Firefox */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #333 #0f0f0f;
+}
 
 
 .font-style {
   font-family: "Manrope", sans-serif;
 }
+

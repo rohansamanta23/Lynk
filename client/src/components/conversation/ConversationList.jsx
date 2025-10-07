@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { getConversations } from "../../api/conversationApi.js";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -12,16 +13,21 @@ import {
 import { toast } from "sonner";
 
 export default function ConversationList() {
+  const navigate = useNavigate();
+  const { conversationId } = useParams();
+
   const [conversations, setConversations] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
 
-  // 🔹 Helper: sort conversations by latest update (most recent first)
+  // Sort conversations by latest update (most recent first)
   const sortByLatest = (list) =>
-    [...list].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+    [...list].sort(
+      (a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)
+    );
 
-  // 🔹 Fetch initial conversations
+  // Fetch initial conversations
   useEffect(() => {
     const fetchConversations = async () => {
       try {
@@ -40,8 +46,13 @@ export default function ConversationList() {
     fetchConversations();
   }, []);
 
-  // 🔹 Handle search filtering
+  // Handle search filtering
   useEffect(() => {
+    if (!query.trim()) {
+      setFiltered(conversations);
+      return;
+    }
+
     const lowerQuery = query.toLowerCase();
     const filteredData = conversations.filter((conv) =>
       conv.displayUser?.name?.toLowerCase().includes(lowerQuery)
@@ -49,40 +60,34 @@ export default function ConversationList() {
     setFiltered(sortByLatest(filteredData));
   }, [query, conversations]);
 
-  // 🔹 Handle real-time presence updates
+  // Handle real-time presence updates
   useEffect(() => {
     const handlePresenceChange = (payload) => {
       if (!payload?.id || !payload?.status) return;
 
       setConversations((prev) =>
-        prev.map((conv) => {
-          // only update if this conversation’s displayUser matches the id
-          if (conv.displayUser?.userId === payload.id) {
-            return {
-              ...conv,
-              displayUser: { ...conv.displayUser, status: payload.status },
-            };
-          }
-          return conv;
-        })
-      );
-
-      setFiltered((prev) =>
-        prev.map((conv) => {
-          if (conv.displayUser?.userId === payload.id) {
-            return {
-              ...conv,
-              displayUser: { ...conv.displayUser, status: payload.status },
-            };
-          }
-          return conv;
-        })
+        prev.map((conv) =>
+          conv.displayUser?.userId === payload.id
+            ? {
+                ...conv,
+                displayUser: {
+                  ...conv.displayUser,
+                  status: payload.status,
+                },
+              }
+            : conv
+        )
       );
     };
 
     listenPresenceChanged(handlePresenceChange);
     return () => stopListenPresenceChanged(handlePresenceChange);
   }, []);
+
+  // When a conversation is clicked
+  const handleConversationClick = (conversation) => {
+    navigate(`/chat/${conversation._id}`);
+  };
 
   return (
     <aside className="py-6 px-3 flex flex-col shadow-xl backdrop-blur-xl min-h-screen">
@@ -114,12 +119,16 @@ export default function ConversationList() {
           </div>
         ) : filtered.length === 0 ? (
           <p className="text-sm text-gray-400 text-center mt-6">
-            No conversations found
+            {query ? "No matching conversations" : "No conversations yet"}
           </p>
         ) : (
           filtered.map((conv, idx) => (
             <div key={conv._id}>
-              <ConversationBox conversation={conv} />
+              <ConversationBox
+                conversation={conv}
+                onClick={handleConversationClick}
+                isActive={conv._id === conversationId} // ✅ highlight active chat
+              />
               {idx < filtered.length - 1 && (
                 <Separator className="bg-gradient-to-r from-transparent via-[#2e2e2e] to-transparent" />
               )}
