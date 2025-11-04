@@ -69,7 +69,7 @@ const getConversationsService = async (userId) => {
 
 const getConversationByIdService = async (conversationId, userId) => {
   const conversation = await Conversation.findById(conversationId)
-    .populate("participants", "name userId")
+    .populate("participants", "name userId status")
     .populate("lastMessage")
     .lean();
 

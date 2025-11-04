@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react";
 import { Send } from "lucide-react";
-import { Input } from "@/components/ui/input";
 
 export default function MessageInput({ onSend }) {
   const [text, setText] = useState("");
@@ -11,9 +10,8 @@ export default function MessageInput({ onSend }) {
     if (!text.trim()) return;
     onSend(text);
     setText("");
-    // Reset height when message is sent
     if (textareaRef.current) {
-      textareaRef.current.style.height = "48px";
+      textareaRef.current.style.height = "48px"; // reset height
     }
   };
 
@@ -24,12 +22,12 @@ export default function MessageInput({ onSend }) {
     }
   };
 
-  // Auto-resize the input box as user types
+  // 🔹 Auto-resize textarea height dynamically
   useEffect(() => {
     const textarea = textareaRef.current;
     if (textarea) {
       textarea.style.height = "auto";
-      textarea.style.height = `${Math.min(textarea.scrollHeight, 160)}px`; // limit max height
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 160)}px`;
     }
   }, [text]);
 
@@ -39,27 +37,26 @@ export default function MessageInput({ onSend }) {
       className="
         relative z-10
         flex items-end gap-3
-        px-5 py-4
+        px-3 py-3
         mx-2 mb-2
         bg-[#0b0b0b]/90
         border border-[#3a3a3a]
         rounded-2xl
         backdrop-blur-lg
         shadow-[0_0_25px_rgba(0,0,0,0.6)]
-        hover:shadow-[0_0_25px_#d1d1d160]
         transition-all duration-300
       "
     >
-      {/* Textarea Input */}
+      {/* 🔸 Textarea Input */}
       <div
         className="
           flex-1 flex items-center
-          bg-[#151515]/90
+          bg-[#151515]/95
           border border-[#4d4d4d]
-          rounded-xl px-4 py-2
+          rounded-2xl px-4 py-2
           focus-within:border-[#c0c0c0]
-          focus-within:shadow-[0_0_10px_#c0c0c040]
           transition-all duration-300
+          min-h-[52px]
         "
       >
         <textarea
@@ -73,21 +70,24 @@ export default function MessageInput({ onSend }) {
             resize-none overflow-y-auto
             bg-transparent border-0 outline-none
             text-[#f5f5f5] placeholder:text-gray-500
-            text-sm leading-relaxed
+            text-[15px] leading-relaxed
             max-h-40
+            pt-[5px]
+            pb-[5px]
           "
           rows={1}
         />
       </div>
 
-      {/* Send Button */}
+      {/* 🔸 Send Button */}
       <button
         type="submit"
         disabled={!text.trim()}
         className="
           flex items-center justify-center
-          h-12 w-12 rounded-xl
-          bg-gradient-to-tr from-[#a9a9a9] to-[#e0e0e0]
+          h-[52px] w-[52px]
+          rounded-2xl
+          bg-gradient-to-tr from-[#bfbfbf] to-[#dcdcdc]
           text-black
           hover:shadow-[0_0_18px_#c0c0c060]
           disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none

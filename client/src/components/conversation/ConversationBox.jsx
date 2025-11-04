@@ -10,7 +10,7 @@ export default function ConversationBox({ conversation, onClick, isActive }) {
   }
 
   // Active (selected) conversation border override
-  const activeBorder = isActive ? "border-white" : "border-[#222]/0";
+  const activeBorder = isActive ? "border-gray-500" : "border-[#222]/0";
 
   const handleClick = () => {
     onClick?.(conversation);
@@ -29,7 +29,7 @@ export default function ConversationBox({ conversation, onClick, isActive }) {
       onKeyDown={handleKeyDown}
       role="button"
       tabIndex={0}
-      className={`flex items-center justify-between rounded-2xl px-4 py-3 border-2 ${activeBorder} hover:border-gray-600 transition cursor-pointer focus:outline-none focus:border-[#c7c5c5] hover:scale-[.98]`}
+      className={`flex items-center justify-between rounded-2xl px-4 py-3 border-2 ${activeBorder} hover:border-gray-600 transition cursor-pointer focus:outline-none focus:border-gray-500 hover:scale-[.98]`}
     >
       <div className="flex items-center gap-4 w-full">
         <div
